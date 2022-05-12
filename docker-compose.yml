@@ -1,0 +1,58 @@
+version: '3'
+
+services:
+  app:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    command: [
+      "cargo", "watch", "--why",
+      "--ignore", "data",
+      "--ignore", ".cargo",
+      "--ignore", "target-docker",
+      "--ignore", "docker-compose.yml",
+      "--",
+      "cargo", "run", "--color", "always"
+    ]
+    stop_signal: SIGKILL # boom
+    container_name: app
+    depends_on:
+      - database
+    volumes:
+      - ./:/workdir
+    ports:
+      - "8001:8001"
+    expose:
+      - "8001"
+    environment:
+      - CARGO_TARGET_DIR=target-docker
+      - CARGO_HOME=.cargo
+      - DATABASE_URL=postgres://posts:posts@db:5432/posts
+      - RUST_LOG=info
+      - RUST_BACKTRACE=1
+
+  database:
+    image: postgres:13
+    container_name: db
+    environment:
+      - "POSTGRES_USER=posts"
+      - "POSTGRES_PASSWORD=posts"
+      - "POSTGRES_DATABASE=posts"
+    volumes:
+      - ./docker/data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    volumes:
+      - ./docker/nginx:/etc/nginx/conf.d
+    ports:
+      - "5000:8001"
+    depends_on:
+      - app
+
+networks:
+  test:
+    name: posts_network

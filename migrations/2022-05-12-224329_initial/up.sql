@@ -1,0 +1,4 @@
+CREATE TABLE posts (
+    id SERIAL PRIMARY KEY,
+    content VARCHAR(200) NOT NULL
+);

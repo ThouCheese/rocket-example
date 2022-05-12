@@ -1,0 +1,35 @@
+version: '3'
+
+services:
+  test_app:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    command: "cargo test --tests --workspace --target-dir=target-test --color always"
+    container_name: test_app
+    depends_on:
+      - test_db
+    environment:
+      - CARGO_TARGET_DIR=target-docker
+      - CARGO_HOME=.cargo
+      - DATABASE_URL=postgres://posts:posts@test_db:5432/posts
+    volumes:
+      - ./:/workdir
+    networks:
+      - test
+
+  test_db:
+    image: postgres:13
+    container_name: test_db
+    environment:
+      - "POSTGRES_USER=posts"
+      - "POSTGRES_PASSWORD=posts"
+      - "POSTGRES_DATABASE=posts"
+    volumes:
+      - ./docker/test_data:/var/lib/postgresql/data
+    networks:
+      - test
+
+networks:
+  test:
+    name: posts_test_network
